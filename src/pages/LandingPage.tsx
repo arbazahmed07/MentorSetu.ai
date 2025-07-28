@@ -311,7 +311,7 @@ const LandingPage = () => {
           </div>
           
           <div className="border-t mt-6 sm:mt-8 pt-6 sm:pt-8 text-center text-muted-foreground">
-            <p className="text-xs sm:text-sm">&copy; 2024 MentorSetu.ai. All rights reserved.</p>
+            <p className="text-xs sm:text-sm">&copy; 2025 MentorSetu.ai. All rights reserved.</p>
           </div>
         </div>
       </footer>
