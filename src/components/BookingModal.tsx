@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,13 +10,6 @@ import { Calendar, Clock, CreditCard, CheckCircle, AlertCircle } from "lucide-re
 import { api } from "@/utils/api";
 import { type Mentor } from "@/data/mentors";
 import { useToast } from "@/hooks/use-toast";
-
-interface BookingModalProps {
-  mentor: Mentor;
-  isOpen: boolean;
-  onClose: () => void;
-  onBookingSuccess?: () => void;
-}
 
 interface BookingForm {
   studentName: string;
@@ -27,7 +20,13 @@ interface BookingForm {
   sessionType: 'video' | 'chat' | 'phone';
 }
 
-// Consistent student email across the app
+interface BookingModalProps {
+  mentor: Mentor;
+  isOpen: boolean;
+  onClose: () => void;
+  onBookingSuccess?: () => void;
+}
+
 const CURRENT_USER_EMAIL = "john@example.com";
 
 const BookingModal = ({ mentor, isOpen, onClose, onBookingSuccess }: BookingModalProps) => {
@@ -39,13 +38,12 @@ const BookingModal = ({ mentor, isOpen, onClose, onBookingSuccess }: BookingModa
     date: '',
     time: '',
     reason: '',
-    sessionType: 'video'
+    sessionType: 'video',
   });
   const [paymentMethod, setPaymentMethod] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Pre-fill email when modal opens
   useEffect(() => {
     if (isOpen && form.studentEmail !== CURRENT_USER_EMAIL) {
       setForm(prev => ({ ...prev, studentEmail: CURRENT_USER_EMAIL }));
@@ -65,16 +63,16 @@ const BookingModal = ({ mentor, isOpen, onClose, onBookingSuccess }: BookingModa
       });
       return false;
     }
-    
+
     if (!form.studentEmail.trim() || !form.studentEmail.includes('@')) {
       toast({
-        title: "Error", 
+        title: "Error",
         description: "Please enter a valid email address",
         variant: "destructive",
       });
       return false;
     }
-    
+
     if (!form.date) {
       toast({
         title: "Error",
@@ -83,7 +81,7 @@ const BookingModal = ({ mentor, isOpen, onClose, onBookingSuccess }: BookingModa
       });
       return false;
     }
-    
+
     if (!form.time) {
       toast({
         title: "Error",
@@ -92,7 +90,7 @@ const BookingModal = ({ mentor, isOpen, onClose, onBookingSuccess }: BookingModa
       });
       return false;
     }
-    
+
     if (!form.reason.trim()) {
       toast({
         title: "Error",
@@ -101,7 +99,7 @@ const BookingModal = ({ mentor, isOpen, onClose, onBookingSuccess }: BookingModa
       });
       return false;
     }
-    
+
     return true;
   };
 
@@ -121,16 +119,12 @@ const BookingModal = ({ mentor, isOpen, onClose, onBookingSuccess }: BookingModa
     }
 
     setLoading(true);
-    
     try {
-      // Simulate payment processing
       const paymentResult = await api.processPayment(mentor.price, paymentMethod);
-      
       if (!paymentResult.success) {
         throw new Error(paymentResult.error);
       }
 
-      // Book the session
       const bookingResult = await api.bookSession({
         mentorId: mentor.id,
         mentorName: mentor.name,
@@ -140,12 +134,11 @@ const BookingModal = ({ mentor, isOpen, onClose, onBookingSuccess }: BookingModa
         time: form.time,
         reason: form.reason,
         amount: mentor.price,
-        sessionType: form.sessionType
+        sessionType: form.sessionType,
       });
 
       if (bookingResult.success) {
         setStep('success');
-        // Call the callback to refresh dashboard if provided
         onBookingSuccess?.();
         toast({
           title: "Success!",
@@ -173,7 +166,7 @@ const BookingModal = ({ mentor, isOpen, onClose, onBookingSuccess }: BookingModa
       date: '',
       time: '',
       reason: '',
-      sessionType: 'video'
+      sessionType: 'video',
     });
     setPaymentMethod('');
     onClose();
@@ -203,69 +196,75 @@ const BookingModal = ({ mentor, isOpen, onClose, onBookingSuccess }: BookingModa
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="w-full max-w-[90vw] sm:max-w-md max-h-[85vh] overflow-y-auto p-4 sm:p-6 rounded-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <Calendar className="h-5 w-5" />
+          <DialogTitle className="flex items-center space-x-2 text-base sm:text-lg font-semibold">
+            <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
             <span>Book Session with {mentor.name}</span>
           </DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
+            Select your preferred date, time, and session type
+          </DialogDescription>
         </DialogHeader>
 
         {step === 'form' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+          <div className="space-y-4 sm:space-y-5">
+            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
               <div>
-                <p className="font-medium">{mentor.name}</p>
-                <p className="text-sm text-muted-foreground">{mentor.expertise[0]}</p>
+                <p className="font-medium text-sm sm:text-base">{mentor.name}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">{mentor.expertise[0]}</p>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-primary">${mentor.price}</p>
-                <p className="text-sm text-muted-foreground">60 minutes</p>
+                <p className="text-lg sm:text-xl font-bold text-primary">${mentor.price}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">60 minutes</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4 sm:grid sm:grid-cols-2 sm:gap-4 sm:space-y-0">
               <div className="space-y-2">
-                <Label htmlFor="name">Your Name</Label>
+                <Label htmlFor="name" className="text-xs sm:text-sm">Your Name</Label>
                 <Input
                   id="name"
                   placeholder="Enter your full name"
                   value={form.studentName}
                   onChange={(e) => handleInputChange('studentName', e.target.value)}
+                  className="h-10 sm:h-11 text-sm"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-xs sm:text-sm">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   placeholder="your@email.com"
                   value={form.studentEmail}
                   onChange={(e) => handleInputChange('studentEmail', e.target.value)}
+                  className="h-10 sm:h-11 text-sm"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4 sm:grid sm:grid-cols-2 sm:gap-4 sm:space-y-0">
               <div className="space-y-2">
-                <Label htmlFor="date">Preferred Date</Label>
+                <Label htmlFor="date" className="text-xs sm:text-sm">Preferred Date</Label>
                 <Input
                   id="date"
                   type="date"
                   min={getMinDate()}
                   value={form.date}
                   onChange={(e) => handleInputChange('date', e.target.value)}
+                  className="h-10 sm:h-11 text-sm"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="time">Preferred Time</Label>
+                <Label htmlFor="time" className="text-xs sm:text-sm">Preferred Time</Label>
                 <Select value={form.time} onValueChange={(value) => handleInputChange('time', value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-10 sm:h-11 text-sm">
                     <SelectValue placeholder="Select time" />
                   </SelectTrigger>
                   <SelectContent>
                     {generateTimeSlots().map(time => (
-                      <SelectItem key={time} value={time}>
+                      <SelectItem key={time} value={time} className="text-sm">
                         {time}
                       </SelectItem>
                     ))}
@@ -275,38 +274,39 @@ const BookingModal = ({ mentor, isOpen, onClose, onBookingSuccess }: BookingModa
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="sessionType">Session Type</Label>
+              <Label htmlFor="sessionType" className="text-xs sm:text-sm">Session Type</Label>
               <Select 
                 value={form.sessionType} 
                 onValueChange={(value: 'video' | 'chat' | 'phone') => handleInputChange('sessionType', value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-10 sm:h-11 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="video">Video Call</SelectItem>
-                  <SelectItem value="chat">Chat</SelectItem>
-                  <SelectItem value="phone">Phone Call</SelectItem>
+                  <SelectItem value="video" className="text-sm">Video Call</SelectItem>
+                  <SelectItem value="chat" className="text-sm">Chat</SelectItem>
+                  <SelectItem value="phone" className="text-sm">Phone Call</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="reason">What would you like to discuss?</Label>
+              <Label htmlFor="reason" className="text-xs sm:text-sm">What would you like to discuss?</Label>
               <Textarea
                 id="reason"
                 placeholder="Briefly describe what you'd like to cover in this session..."
-                rows={3}
+                rows={4}
                 value={form.reason}
                 onChange={(e) => handleInputChange('reason', e.target.value)}
+                className="text-sm"
               />
             </div>
 
-            <div className="flex space-x-3">
-              <Button variant="outline" onClick={handleClose} className="flex-1">
+            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+              <Button variant="outline" onClick={handleClose} className="flex-1 h-10 sm:h-11 text-sm">
                 Cancel
               </Button>
-              <Button onClick={handleFormSubmit} className="flex-1" variant="cta">
+              <Button onClick={handleFormSubmit} className="flex-1 h-10 sm:h-11 text-sm" variant="cta">
                 Continue to Payment
               </Button>
             </div>
@@ -314,21 +314,21 @@ const BookingModal = ({ mentor, isOpen, onClose, onBookingSuccess }: BookingModa
         )}
 
         {step === 'payment' && (
-          <div className="space-y-6">
-            <div className="p-4 bg-muted rounded-lg">
-              <h3 className="font-medium mb-3">Session Summary</h3>
-              <div className="space-y-2 text-sm">
+          <div className="space-y-4 sm:space-y-5">
+            <div className="p-3 bg-muted rounded-lg">
+              <h3 className="font-medium text-sm sm:text-base mb-3">Session Summary</h3>
+              <div className="space-y-2 text-xs sm:text-sm">
                 <div className="flex justify-between">
                   <span>Mentor:</span>
                   <span>{mentor.name}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Date:</span>
-                  <span>{new Date(form.date).toLocaleDateString()}</span>
+                  <span>{form.date ? new Date(form.date).toLocaleDateString() : 'Not selected'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Time:</span>
-                  <span>{form.time}</span>
+                  <span>{form.time || 'Not selected'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Duration:</span>
@@ -341,12 +341,12 @@ const BookingModal = ({ mentor, isOpen, onClose, onBookingSuccess }: BookingModa
               </div>
             </div>
 
-            <div className="space-y-3">
-              <Label>Payment Method</Label>
+            <div className="space-y-2">
+              <Label className="text-xs sm:text-sm">Payment Method</Label>
               <div className="space-y-2">
                 <Button
                   variant={paymentMethod === 'razorpay' ? 'default' : 'outline'}
-                  className="w-full justify-start"
+                  className="w-full justify-start h-10 sm:h-11 text-sm"
                   onClick={() => setPaymentMethod('razorpay')}
                 >
                   <CreditCard className="h-4 w-4 mr-2" />
@@ -354,7 +354,7 @@ const BookingModal = ({ mentor, isOpen, onClose, onBookingSuccess }: BookingModa
                 </Button>
                 <Button
                   variant={paymentMethod === 'paypal' ? 'default' : 'outline'}
-                  className="w-full justify-start"
+                  className="w-full justify-start h-10 sm:h-11 text-sm"
                   onClick={() => setPaymentMethod('paypal')}
                 >
                   <CreditCard className="h-4 w-4 mr-2" />
@@ -363,14 +363,14 @@ const BookingModal = ({ mentor, isOpen, onClose, onBookingSuccess }: BookingModa
               </div>
             </div>
 
-            <div className="flex space-x-3">
-              <Button variant="outline" onClick={() => setStep('form')} className="flex-1">
+            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+              <Button variant="outline" onClick={() => setStep('form')} className="flex-1 h-10 sm:h-11 text-sm">
                 Back
               </Button>
               <Button 
                 onClick={handlePayment} 
                 disabled={loading}
-                className="flex-1" 
+                className="flex-1 h-10 sm:h-11 text-sm" 
                 variant="success"
               >
                 {loading ? (
@@ -387,34 +387,34 @@ const BookingModal = ({ mentor, isOpen, onClose, onBookingSuccess }: BookingModa
         )}
 
         {step === 'success' && (
-          <div className="text-center space-y-6">
-            <div className="mx-auto w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center">
-              <CheckCircle className="h-8 w-8 text-secondary" />
+          <div className="text-center space-y-4 sm:space-y-5">
+            <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 bg-secondary/10 rounded-full flex items-center justify-center">
+              <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 text-secondary" />
             </div>
             
             <div>
-              <h3 className="text-xl font-semibold mb-2">Booking Confirmed!</h3>
-              <p className="text-muted-foreground">
+              <h3 className="text-lg sm:text-xl font-semibold mb-2">Booking Confirmed!</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Your session with {mentor.name} has been successfully booked for{' '}
-                {new Date(form.date).toLocaleDateString()} at {form.time}.
+                {form.date ? new Date(form.date).toLocaleDateString() : 'Not selected'} at {form.time || 'Not selected'}.
               </p>
             </div>
 
-            <div className="p-4 bg-muted rounded-lg text-left">
-              <h4 className="font-medium mb-2">What's Next?</h4>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• You'll receive a confirmation email shortly</li>
-                <li>• Calendar invite will be sent 24 hours before the session</li>
-                <li>• You can reschedule or cancel up to 24 hours in advance</li>
-                <li>• Check your dashboard for session details</li>
+            <div className="p-3 bg-muted rounded-lg text-left">
+              <h4 className="font-medium text-sm sm:text-base mb-2">What's Next?</h4>
+              <ul className="text-xs sm:text-sm text-muted-foreground space-y-1">
+                <li className="flex items-start"><span className="mr-2">•</span> You'll receive a confirmation email shortly</li>
+                <li className="flex items-start"><span className="mr-2">•</span> Calendar invite will be sent 24 hours before the session</li>
+                <li className="flex items-start"><span className="mr-2">•</span> You can reschedule or cancel up to 24 hours in advance</li>
+                <li className="flex items-start"><span className="mr-2">•</span> Check your dashboard for session details</li>
               </ul>
             </div>
 
-            <div className="flex space-x-3">
-              <Button variant="outline" onClick={handleClose} className="flex-1">
+            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+              <Button variant="outline" onClick={handleClose} className="flex-1 h-10 sm:h-11 text-sm">
                 Close
               </Button>
-              <Button variant="cta" onClick={handleViewDashboard} className="flex-1">
+              <Button variant="cta" onClick={handleViewDashboard} className="flex-1 h-10 sm:h-11 text-sm">
                 View Dashboard
               </Button>
             </div>
